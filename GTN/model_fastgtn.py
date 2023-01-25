@@ -2,8 +2,8 @@ import torch
 
 import torch.nn as nn
 import torch.nn.functional as F
-
-from GTN.gcn import GCNConv
+from torch.nn import Parameter
+from inits import glorot, zeros
 import torch_sparse
 
 
@@ -93,10 +93,12 @@ class FastGTN(nn.Module):
         self.layers = nn.ModuleList(layers)
 
         self.Ws = []
-
         for i in range(self.num_channels):
-            self.Ws.append(GCNConv(in_channels=self.w_in, out_channels=self.w_out).weight)
+            #self.Ws.append(GCNConv(in_channels=self.w_in, out_channels=self.w_out).weight)
+            self.Ws.append( Parameter(torch.Tensor(self.w_in, self.w_out)))
+
         self.Ws = nn.ParameterList(self.Ws)
+        [glorot(W) for W in self.Ws]
         self.linear1 = nn.Linear(self.w_out * self.num_channels, self.w_out)
 
 
