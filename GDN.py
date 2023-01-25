@@ -9,7 +9,7 @@ import random
 from collections import deque
 from torch.distributions import Categorical
 import numpy as np
-from torch_geometric.utils import f1_score, add_self_loops
+
 from GAT.model import GAT
 from GAT.layers import device
 from copy import deepcopy
@@ -359,7 +359,7 @@ class Agent:
         for i, edge in enumerate(edges):
             edge = torch.tensor(edge, dtype = torch.long, device = device)
             value = torch.ones(edge.shape[1], dtype = torch.float, device = device)
-            edge, value = add_self_loops(edge, edge_attr=value, fill_value=1e-20, num_nodes=self.num_nodes)
+            
 
             deg_inv_sqrt, deg_row, deg_col = _norm(edge.detach(),
                                                    self.num_nodes,
