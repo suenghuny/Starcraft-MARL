@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
-from inits import glorot, zeros
+from GTN.inits import glorot, zeros
+
 import torch_sparse
 
 
@@ -93,10 +94,9 @@ class FastGTN(nn.Module):
         self.layers = nn.ModuleList(layers)
 
         self.Ws = []
-        for i in range(self.num_channels):
-            #self.Ws.append(GCNConv(in_channels=self.w_in, out_channels=self.w_out).weight)
-            self.Ws.append( Parameter(torch.Tensor(self.w_in, self.w_out)))
 
+        for i in range(self.num_channels):
+            self.Ws.append(nn.Parameter(torch.Tensor(self.w_in, self.w_out)))
         self.Ws = nn.ParameterList(self.Ws)
         [glorot(W) for W in self.Ws]
         self.linear1 = nn.Linear(self.w_out * self.num_channels, self.w_out)
@@ -166,6 +166,9 @@ class FastGTLayer(nn.Module):
         self.num_channels =  num_channels
         self.first = first
         self.num_nodes = num_nodes
+
+        self.weight = nn.Parameter(torch.Tensor(num_channels, num_edge_type))
+
         self.conv1 = FastGTConv(num_edge_type = num_edge_type,
                                 num_channels = num_channels,
                                 num_nodes = num_nodes)
@@ -176,17 +179,66 @@ class FastGTLayer(nn.Module):
         channel 별 연산:
         Adjacency matrix(mat_a)를 만들어냄(sparse tensor로 만듬)
         """
-        adj = self.conv1(A, num_nodes, mini_batch = mini_batch)
+
+
+
         # Equation (16)에서 Z와 Adjacency matrix와 convolution filter의 convex combination을 의미하는 부분
         # result_A의 길이는 channel의 길이와 동일함
         # W1은 filter에 해당함함
         # self.conv1은 A를 입력받아 new meta-path adjacency matrix를 출력 받는다.
         if mini_batch == False:
-            Hs = torch.einsum('cij, cjk->cik', adj, H_)
+            weight = self.weight
+            filter = F.softmax(weight, dim=1)
+            num_channels = filter.shape[0]
+            Hs = []
+            for i in range(num_channels):
+                for j, (edge_index, edge_value) in enumerate(A):
+                    if j == 0:
+                        total_edge_index = edge_index
+                        total_edge_value = edge_value * filter[i][j]
+                    else:
+                        total_edge_index = torch.cat((total_edge_index, edge_index), dim=1)
+                        total_edge_value = torch.cat((total_edge_value, edge_value * filter[i][j]))
 
+                a_edge, a_value = torch_sparse.coalesce(total_edge_index.detach(), total_edge_value, m=num_nodes,
+                                                        n=num_nodes, op='add')
+                mat_a = torch.sparse_coo_tensor(a_edge, a_value, (num_nodes, num_nodes)).to(a_edge.device)
+                H = torch.sparse.mm(mat_a, H_[i])
+                Hs.append(H)
+            Hs = torch.stack(Hs, dim=0)
         else:
-
+            # weight = self.weight
+            # filter = F.softmax(weight, dim=1)
+            # num_channels = filter.shape[0]
+            # Hs = []
+            # for b in range(len(A)):
+            #     Hs_temp = []
+            #     for i in range(num_channels):
+            #         for j, (edge_index, edge_value) in enumerate(A[b]):
+            #             if j == 0:
+            #                 total_edge_index = edge_index
+            #                 total_edge_value = edge_value * filter[i][j]
+            #             else:
+            #                 total_edge_index = torch.cat((total_edge_index, edge_index), dim=1)
+            #                 total_edge_value = torch.cat((total_edge_value, edge_value * filter[i][j]))
+            #
+            #         a_edge, a_value = torch_sparse.coalesce(total_edge_index.detach(), total_edge_value, m=num_nodes,
+            #                                                 n=num_nodes, op='add')
+            #         mat_a = torch.sparse_coo_tensor(a_edge, a_value, (num_nodes, num_nodes)).to(a_edge.device)
+            #         H = torch.sparse.mm(mat_a, H_[b][i])
+            #
+            #         Hs_temp.append(H)
+            #     Hs_temp = torch.stack(Hs_temp, dim=0)
+            #     Hs.append(Hs_temp)
+            # Hs = torch.stack(Hs, dim=0)
+            batch_size = len(A)
+            weight = self.weight
+            filter = F.softmax(weight, dim=1)
+            mat_a = torch.stack([torch.stack([torch.sparse_coo_tensor(A[b][i][0], A[b][i][1], (num_nodes, num_nodes)).to(device).to_dense() for i in range(len(A[0]))], dim = 0) for b in range(batch_size)], dim = 0)
+            adj = torch.einsum('bijk,ci->bcjk', mat_a, filter)
             Hs = torch.einsum('bcij, bcjk->bcik', adj, H_)
+
+
         return Hs
 
 
