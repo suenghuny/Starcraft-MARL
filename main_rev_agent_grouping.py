@@ -7,7 +7,8 @@ from functools import partial
 import sys
 import os
 import vessl
-
+def env_fn(env, **kwargs):
+    return env(**kwargs)
 vessl.init()
 REGISTRY = {}
 REGISTRY["sc2"] = partial(env_fn, env=StarCraft2Env)
