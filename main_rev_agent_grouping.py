@@ -7,6 +7,7 @@ from functools import partial
 import sys
 import os
 import vessl
+import time
 def env_fn(env, **kwargs):
     return env(**kwargs)
 vessl.init()
@@ -112,6 +113,7 @@ def train(agent, env, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, i
     step = 0
     losses = []
     eval = False
+    start = time.time()
     while (not done) and (step < max_episode_limit):
         """
         Note: edge index 추출에 세가지 방법
@@ -162,12 +164,12 @@ def train(agent, env, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, i
 
     if e >= train_start:
 
-        print("{} Total reward in episode {} = {}, loss : {}, epsilon : {}, time_step : {}".format(env.map_name,
+        print("{} Total reward in episode {} = {}, loss : {}, epsilon : {}, time_step : {}, episode_duration : {}".format(env.map_name,
                                                                                                 e,
                                                                                                 episode_reward,
                                                                                                 loss,
                                                                                                 epsilon,
-                                                                                                t))
+                                                                                                t, start-time.time()))
 
 
     return episode_reward, epsilon, t, eval
