@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from torch.nn import Parameter
 from GTN.inits import glorot, zeros
 
-import torch_sparse
 
 
 device = f'cuda' if torch.cuda.is_available() else 'cpu'
@@ -172,6 +171,8 @@ class FastGTLayer(nn.Module):
         self.conv1 = FastGTConv(num_edge_type = num_edge_type,
                                 num_channels = num_channels,
                                 num_nodes = num_nodes)
+        self.monitors_before = list()
+        self.monitors_after = list()
 
 
     def forward(self, H_, A, num_nodes, layer=None, mini_batch = False):
@@ -200,43 +201,33 @@ class FastGTLayer(nn.Module):
                         total_edge_index = torch.cat((total_edge_index, edge_index), dim=1)
                         total_edge_value = torch.cat((total_edge_value, edge_value * filter[i][j]))
 
-                a_edge, a_value = torch_sparse.coalesce(total_edge_index.detach(), total_edge_value, m=num_nodes,
-                                                        n=num_nodes, op='add')
-                mat_a = torch.sparse_coo_tensor(a_edge, a_value, (num_nodes, num_nodes)).to(a_edge.device)
+                mat_a = torch.sparse_coo_tensor(total_edge_index.detach(), total_edge_value, (num_nodes, num_nodes)).to(
+                    total_edge_value.device)
+                mat_a = mat_a.coalesce()
                 H = torch.sparse.mm(mat_a, H_[i])
                 Hs.append(H)
             Hs = torch.stack(Hs, dim=0)
         else:
-            # weight = self.weight
-            # filter = F.softmax(weight, dim=1)
-            # num_channels = filter.shape[0]
-            # Hs = []
-            # for b in range(len(A)):
-            #     Hs_temp = []
-            #     for i in range(num_channels):
-            #         for j, (edge_index, edge_value) in enumerate(A[b]):
-            #             if j == 0:
-            #                 total_edge_index = edge_index
-            #                 total_edge_value = edge_value * filter[i][j]
-            #             else:
-            #                 total_edge_index = torch.cat((total_edge_index, edge_index), dim=1)
-            #                 total_edge_value = torch.cat((total_edge_value, edge_value * filter[i][j]))
-            #
-            #         a_edge, a_value = torch_sparse.coalesce(total_edge_index.detach(), total_edge_value, m=num_nodes,
-            #                                                 n=num_nodes, op='add')
-            #         mat_a = torch.sparse_coo_tensor(a_edge, a_value, (num_nodes, num_nodes)).to(a_edge.device)
-            #         H = torch.sparse.mm(mat_a, H_[b][i])
-            #
-            #         Hs_temp.append(H)
-            #     Hs_temp = torch.stack(Hs_temp, dim=0)
-            #     Hs.append(Hs_temp)
-            # Hs = torch.stack(Hs, dim=0)
             batch_size = len(A)
             weight = self.weight
             filter = F.softmax(weight, dim=1)
-            mat_a = torch.stack([torch.stack([torch.sparse_coo_tensor(A[b][i][0], A[b][i][1], (num_nodes, num_nodes)).to(device).to_dense() for i in range(len(A[0]))], dim = 0) for b in range(batch_size)], dim = 0)
-            adj = torch.einsum('bijk,ci->bcjk', mat_a, filter)
-            Hs = torch.einsum('bcij, bcjk->bcik', adj, H_)
+
+            import time
+
+
+            start = time.time()
+            mat_a = list()
+            for b in range(batch_size):
+                temp = list()
+                for i in range(self.num_edge_type):
+                    temp.append(torch.sparse_coo_tensor(A[b][i][0], A[b][i][1], (num_nodes, num_nodes)).to(device).to_dense())
+                mat_a.append(torch.stack(temp, dim=0))
+            mat_a = torch.stack(mat_a, dim=0)
+            self.monitors_after.append(time.time() - start)
+
+
+
+            Hs = torch.einsum('bcij, bcjk-> bcik', torch.einsum('bijk, ci  -> bcjk', mat_a, filter), H_)
 
 
         return Hs
