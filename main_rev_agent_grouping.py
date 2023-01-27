@@ -4,6 +4,7 @@ import torch
 from pysc2.lib.remote_controller import ConnectError, RequestError
 from pysc2.lib.protocol import ProtocolError
 from functools import partial
+import numpy as np
 import sys
 import os
 import vessl
