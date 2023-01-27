@@ -112,6 +112,7 @@ def train(agent, env, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, i
     episode_reward = 0
     step = 0
     losses = []
+    epi_r = list()
     eval = False
     start = time.time()
     while (not done) and (step < max_episode_limit):
@@ -161,7 +162,14 @@ def train(agent, env, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, i
         else:
             epsilon = min_epsilon
 
-
+    epi_r.append(episode_reward)
+    if e % 100 == 1:
+        vessl.log(step = e, payload = {'reward' : np.mean(epi_r)})
+        epi_r = []
+    if eval == True:
+        win_rate = evaluation(env, agent, 32, win_rates_record)
+        vessl.log(step = t, payload = {'win_rate' : win_rate})
+        eval = False
     if e >= train_start:
 
         print("{} Total reward in episode {} = {}, loss : {}, epsilon : {}, time_step : {}, episode_duration : {}".format(env.map_name,
