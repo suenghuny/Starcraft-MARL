@@ -4,9 +4,6 @@ import torch
 import numpy as np
 import random
 import subprocess
-from torch_scatter import scatter_add
-import pdb
-from torch_geometric.utils import degree, add_self_loops
 import torch.nn.functional as F
 from torch.distributions.uniform import Uniform
 import time
@@ -195,10 +192,7 @@ def _norm(edge_index, num_nodes, edge_weight=None, improved=False, dtype=None):
     edge_weight = edge_weight.view(-1)
     assert edge_weight.size(0) == edge_index.size(1)
     row, col = edge_index.detach()
-    deg = scatter_add(edge_weight.clone(),
-                      row.clone(),            # row 방향으로
-                      dim=0,
-                      dim_size=num_nodes)
+    deg = torch.zeros(num_nodes).to(edge_index.device).scatter_add(index = row.clone(), src = edge_weight.clone(), dim = 0)
 
 
     deg_inv_sqrt = deg.pow(-1)
@@ -247,7 +241,7 @@ def to_heterogeneous(edge_index, num_nodes, n_id, edge_type, num_edge, device='c
         #################################### j -> i ########################################
         value_tmp = torch.ones(edge_tmp.shape[1]).type(torch.FloatTensor)
         if args.model == 'FastGTN':
-            edge_tmp, value_tmp = add_self_loops(edge_tmp, edge_weight=value_tmp, fill_value=1e-20, num_nodes=num_nodes)
+
             deg_inv_sqrt, deg_row, deg_col = _norm(edge_tmp.detach(), num_nodes, value_tmp.detach())
             value_tmp = deg_inv_sqrt[deg_row] * value_tmp
         A.append((edge_tmp.to(device), value_tmp.to(device)))
