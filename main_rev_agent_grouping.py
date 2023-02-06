@@ -185,11 +185,11 @@ def main():
 
 
 
-    hidden_size_obs = 30       # GAT 해당(action 및 node representation의 hidden_size)
+    hidden_size_obs = 48       # GAT 해당(action 및 node representation의 hidden_size)
     hidden_size_comm = 64
     hidden_size_Q = 84         # GAT 해당
     hidden_size_meta_path = 54 # GAT 해당
-    n_representation_obs = 45  # GAT 해당
+    n_representation_obs = 48  # GAT 해당
     n_representation_comm = 72
     buffer_size = 150000
     batch_size = 32
