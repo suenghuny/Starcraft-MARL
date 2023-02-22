@@ -22,7 +22,7 @@ def env_fn(env, **kwargs):
     return env(**kwargs)
 
 regularizer = 0.0
-map_name1 = '3s5z'
+map_name1 = '6h_vs_8z'
 
 GNN = 'FastGTN'
 heterogenous = False
@@ -182,11 +182,11 @@ def main():
 
 
 
-    hidden_size_obs = 45       # GAT 해당(action 및 node representation의 hidden_size)
+    hidden_size_obs = 42       # GAT 해당(action 및 node representation의 hidden_size)
     hidden_size_comm = 64
-    hidden_size_Q = 78         # GAT 해당
-    hidden_size_meta_path = 48 # GAT 해당
-    n_representation_obs = 42  # GAT 해당
+    hidden_size_Q = 72         # GAT 해당
+    hidden_size_meta_path = 42 # GAT 해당
+    n_representation_obs = 39  # GAT 해당
     n_representation_comm = 72
     buffer_size = 150000
     batch_size = 32
