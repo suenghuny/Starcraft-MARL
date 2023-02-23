@@ -24,7 +24,7 @@ def env_fn(env, **kwargs):
 regularizer = 0.0
 map_name1 = '6h_vs_8z'
 
-GNN = 'FastGTN'
+GNN = 'GAT'
 heterogenous = False
 
 """
