@@ -1,3 +1,5 @@
+import pandas as pd
+
 from smac_rev import StarCraft2Env
 from GDN import Agent
 import torch
@@ -7,19 +9,23 @@ from functools import partial
 import numpy as np
 import sys
 import os
-import vessl
 import time
-def env_fn(env, **kwargs):
-    return env(**kwargs)
-vessl.init()
-REGISTRY = {}
-REGISTRY["sc2"] = partial(env_fn, env=StarCraft2Env)
 if sys.platform == "linux":
-    os.environ.setdefault("SC2PATH",
-                          os.path.join(os.getcwd(), "3rdparty", "StarCraftII"))
+    vessl_on = True
+else:
+    vessl_on = False
 
-def env_fn(env, **kwargs):
-    return env(**kwargs)
+if vessl_on == True:
+    import vessl
+
+    def env_fn(env, **kwargs):
+        return env(**kwargs)
+    vessl.init()
+    REGISTRY = {}
+    REGISTRY["sc2"] = partial(env_fn, env=StarCraft2Env)
+    os.environ.setdefault("SC2PATH",os.path.join(os.getcwd(), "3rdparty", "StarCraftII"))
+
+
 
 regularizer = 0.0
 map_name1 = '6h_vs_8z'
@@ -175,7 +181,10 @@ def train(agent, env, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, i
 
 def main():
     #writer = SummaryWriter('logs/')
-    env1 = REGISTRY["sc2"](map_name=map_name1, seed=123, step_mul=8, replay_dir="Replays", )
+    if vessl_on == True:
+        env1 = REGISTRY["sc2"](map_name=map_name1, seed=123, step_mul=8, replay_dir="Replays", )
+    else:
+        env1 = StarCraft2Env(map_name=map_name1, step_mul=8, replay_dir="Replays", seed=123)
     env1.reset()
     num_unit_types, unit_type_ids = get_agent_type_of_envs([env1])
     env1.generate_num_unit_types(num_unit_types, unit_type_ids)
@@ -247,19 +256,26 @@ def main():
     #network_sharing([agent1])
     t = 0
     epi_r = []
+    win_rates = []
     for e in range(num_episode):
         episode_reward, epsilon, t, eval = train(agent1, env1, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, initializer)
         initializer = False
-        
-   
-        
+        epi_r.append(episode_reward)
         if e % 100 == 1:
-            epi_r.append(episode_reward)
-            vessl.log(step = e, payload = {'reward' : np.mean(epi_r)})
-            epi_r = []
+            if vessl_on == True:
+                vessl.log(step = e, payload = {'reward' : np.mean(epi_r)})
+                epi_r = []
+            else:
+                r_df= pd.DataFrame(epi_r)
+                r_df.to_csv("reward.csv")
+
         if eval == True:
             win_rate = evaluation(env1, agent1, 32)
-            vessl.log(step = t, payload = {'win_rate' : win_rate})
+            if vessl_on == True:
+                vessl.log(step = t, payload = {'win_rate' : win_rate})
+            else:
+                wr_df = pd.DataFrame(win_rates)
+                wr_df.to_csv("win_rate.csv")
 
 
 
