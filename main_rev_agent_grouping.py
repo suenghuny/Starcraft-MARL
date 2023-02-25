@@ -191,16 +191,16 @@ def main():
 
 
 
-    hidden_size_obs = 28       # GAT 해당(action 및 node representation의 hidden_size)
-    hidden_size_comm = 64
-    hidden_size_Q = 96         # GAT 해당
+    hidden_size_obs = 32       # GAT 해당(action 및 node representation의 hidden_size)
+    hidden_size_comm = 60
+    hidden_size_Q = 84         # GAT 해당
     hidden_size_meta_path = 42 # GAT 해당
-    n_representation_obs = 32  # GAT 해당
-    n_representation_comm = 72
+    n_representation_obs = 36  # GAT 해당
+    n_representation_comm = 69
     buffer_size = 150000
     batch_size = 32
     gamma = 0.99
-    learning_rate = 1.5e-4
+    learning_rate = 1.3e-4
     n_multi_head = 1
     dropout = 0.6
     num_episode = 1000000
