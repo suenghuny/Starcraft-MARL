@@ -10,17 +10,17 @@ import numpy as np
 import sys
 import os
 import time
+import vessl
 if sys.platform == "linux":
     vessl_on = True
 else:
     vessl_on = False
 
 if vessl_on == True:
-    import vessl
-
+    vessl.init()
     def env_fn(env, **kwargs):
         return env(**kwargs)
-    vessl.init()
+    
     REGISTRY = {}
     REGISTRY["sc2"] = partial(env_fn, env=StarCraft2Env)
     os.environ.setdefault("SC2PATH",os.path.join(os.getcwd(), "3rdparty", "StarCraftII"))
