@@ -171,10 +171,10 @@ def train(agent, env, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, i
 
         print("{} Total reward in episode {} = {}, loss : {}, epsilon : {}, time_step : {}, episode_duration : {}".format(env.map_name,
                                                                                                 e,
-                                                                                                episode_reward,
-                                                                                                loss,
-                                                                                                epsilon,
-                                                                                                t, start-time.time()))
+                                                                                                np.round(episode_reward, 2),
+                                                                                                np.round(loss, 2),
+                                                                                                np.round(epsilon, 2),
+                                                                                                t, np.round(time.time()-start, 2)))
 
 
     return episode_reward, epsilon, t, eval
