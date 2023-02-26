@@ -10,14 +10,14 @@ import numpy as np
 import sys
 import os
 import time
-import vessl
+#import vessl
 if sys.platform == "linux":
     vessl_on = True
 else:
     vessl_on = False
 
 if vessl_on == True:
-    vessl.init()
+    #vessl.init()
     def env_fn(env, **kwargs):
         return env(**kwargs)
     
@@ -263,7 +263,8 @@ def main():
         epi_r.append(episode_reward)
         if e % 100 == 1:
             if vessl_on == True:
-                vessl.log(step = e, payload = {'reward' : np.mean(epi_r)})
+                pass
+                #vessl.log(step = e, payload = {'reward' : np.mean(epi_r)})
                 epi_r = []
             else:
                 r_df= pd.DataFrame(epi_r)
@@ -272,7 +273,8 @@ def main():
         if eval == True:
             win_rate = evaluation(env1, agent1, 32)
             if vessl_on == True:
-                vessl.log(step = t, payload = {'win_rate' : win_rate})
+                pass
+                #vessl.log(step = t, payload = {'win_rate' : win_rate})
             else:
                 wr_df = pd.DataFrame(win_rates)
                 wr_df.to_csv("win_rate.csv")
