@@ -202,7 +202,7 @@ def main():
     learning_rate = cfg.lr
     n_multi_head = cfg.n_multi_head
     dropout = cfg.dropout
-    num_episode = cfg.num_episod
+    num_episode = cfg.num_episode
     train_start = cfg.train_start
     epsilon = cfg.epsilon
     min_epsilon = cfg.min_epsilon
