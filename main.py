@@ -214,6 +214,9 @@ def main():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    log_dir = '/output/logs/'
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
 
     initializer = True
     writer = SummaryWriter('/output/logs/',
