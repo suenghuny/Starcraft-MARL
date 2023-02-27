@@ -253,28 +253,28 @@ def main():
         #writer.add_scalar("episode_reward/train", episode_reward, e)
         if t % 500000 == 1000:
             if vessl_on == True:
-                agent1.save_model(output_dir, "{}.pt".format(t))
+                agent1.save_model(output_dir+"/{}.pt".format(t))
             else:
-                agent1.save_model(output_dir, "{}.pt".format(t))
+                agent1.save_model(output_dir+"{}.pt".format(t))
         if e % 100 == 1:
             if vessl_on == True:
                 vessl.log(step = e, payload = {'reward' : np.mean(epi_r)})
                 epi_r = []
                 r_df= pd.DataFrame(epi_r)
-                r_df.to_csv(output_dir, "reward.csv")
+                r_df.to_csv(output_dir+"reward.csv")
             else:
                 r_df= pd.DataFrame(epi_r)
-                r_df.to_csv(output_dir, "reward.csv")
+                r_df.to_csv(output_dir+"reward.csv")
 
         if eval == True:
             win_rate = evaluation(env1, agent1, 32)
             if vessl_on == True:
                 vessl.log(step = t, payload = {'win_rate' : win_rate})
                 wr_df = pd.DataFrame(win_rates)
-                wr_df.to_csv(output_dir, "win_rate.csv")
+                wr_df.to_csv(output_dir+"win_rate.csv")
             else:
                 wr_df = pd.DataFrame(win_rates)
-                wr_df.to_csv(output_dir, "win_rate.csv")
+                wr_df.to_csv(output_dir+"win_rate.csv")
 
 
 
