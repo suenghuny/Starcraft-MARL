@@ -190,6 +190,7 @@ def main():
 
 
 
+
     hidden_size_obs = cfg.hidden_size_obs       # GAT 해당(action 및 node representation의 hidden_size)
     hidden_size_comm = cfg.hidden_size_comm
     hidden_size_Q = cfg.hidden_size_Q         # GAT 해당
@@ -208,6 +209,11 @@ def main():
     min_epsilon = cfg.min_epsilon
     anneal_steps = cfg.anneal_steps
     anneal_epsilon = (epsilon - min_epsilon) / anneal_steps
+
+    output_dir = "\output\map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
 
     initializer = True
     writer = SummaryWriter('/output/logs/',
@@ -242,31 +248,30 @@ def main():
         initializer = False
         epi_r.append(episode_reward)
         writer.add_scalar("episode_reward/train", episode_reward, e)
-        if t % 500000 == 0:
+        if t % 500000 == 1000:
             if vessl_on == True:
-                agent1.save_model("\output\map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.pt".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
+                agent1.save_model(output_dir, "{}.pt".format(t))
             else:
-                agent1.save_model("\output\map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.pt".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
+                agent1.save_model(output_dir, "{}.pt".format(t))
         if e % 100 == 1:
             if vessl_on == True:
                 vessl.log(step = e, payload = {'reward' : np.mean(epi_r)})
                 epi_r = []
                 r_df= pd.DataFrame(epi_r)
-                r_df.to_csv("\output\cumulative_reward_map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
+                r_df.to_csv(output_dir, "reward.csv")
             else:
                 r_df= pd.DataFrame(epi_r)
-                r_df.to_csv("\output\cumulative_reward_map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
+                r_df.to_csv(output_dir, "reward.csv")
 
         if eval == True:
             win_rate = evaluation(env1, agent1, 32)
             if vessl_on == True:
                 vessl.log(step = t, payload = {'win_rate' : win_rate})
                 wr_df = pd.DataFrame(win_rates)
-                wr_df.to_csv("\output\win_rate_map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
+                wr_df.to_csv(output_dir, "win_rate.csv")
             else:
                 wr_df = pd.DataFrame(win_rates)
-                wr_df.to_csv("\output\win_rate_map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
-
+                wr_df.to_csv(output_dir, "win_rate.csv")
 
 
 
