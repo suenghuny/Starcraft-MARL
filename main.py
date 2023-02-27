@@ -210,11 +210,11 @@ def main():
     anneal_steps = cfg.anneal_steps
     anneal_epsilon = (epsilon - min_epsilon) / anneal_steps
 
-    output_dir = "\output\map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm)
+    output_dir = "./output/map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    log_dir = '/output/logs/'
+    log_dir = './output/logs/'
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
