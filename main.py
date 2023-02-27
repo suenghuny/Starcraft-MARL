@@ -219,10 +219,10 @@ def main():
         os.makedirs(log_dir)
 
     initializer = True
-    writer = SummaryWriter(log_dir,
-                           comment="map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(
-                               map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs,
-                               n_representation_comm))
+    # writer = SummaryWriter(log_dir,
+    #                        comment="map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(
+    #                            map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs,
+    #                            n_representation_comm))
     agent1 = Agent(num_agent=env1.get_env_info()["n_agents"],
                    num_enemy=env1.get_env_info()["n_enemies"],
                    feature_size=env1.get_env_info()["node_features"],
@@ -250,7 +250,7 @@ def main():
         episode_reward, epsilon, t, eval = train(agent1, env1, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, initializer)
         initializer = False
         epi_r.append(episode_reward)
-        writer.add_scalar("episode_reward/train", episode_reward, e)
+        #writer.add_scalar("episode_reward/train", episode_reward, e)
         if t % 500000 == 1000:
             if vessl_on == True:
                 agent1.save_model(output_dir, "{}.pt".format(t))
