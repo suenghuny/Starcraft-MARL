@@ -2,25 +2,27 @@ import pandas as pd
 
 from smac_rev import StarCraft2Env
 from GDN import Agent
-import torch
-from pysc2.lib.remote_controller import ConnectError, RequestError
-from pysc2.lib.protocol import ProtocolError
 from functools import partial
 import numpy as np
 import sys
 import os
 import time
-#import vessl
-if sys.platform == "linux":
-    vessl_on = True
-else:
-    vessl_on = False
+from cfg import get_cfg
+cfg = get_cfg()
 
+vessl_on = cfg.vessl
 if vessl_on == True:
-    #vessl.init()
+    import vessl
+    vessl.init()
+else:
+    from torch.utils.tensorboard import SummaryWriter
+
+
+
+
+if sys.platform == "linux":
     def env_fn(env, **kwargs):
         return env(**kwargs)
-    
     REGISTRY = {}
     REGISTRY["sc2"] = partial(env_fn, env=StarCraft2Env)
     os.environ.setdefault("SC2PATH",os.path.join(os.getcwd(), "3rdparty", "StarCraftII"))
@@ -28,9 +30,8 @@ if vessl_on == True:
 
 
 regularizer = 0.0
-map_name1 = '6h_vs_8z'
-
-GNN = 'GAT'
+map_name1 = cfg.map_name
+GNN = cfg.GNN
 heterogenous = False
 
 """
@@ -169,50 +170,50 @@ def train(agent, env, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, i
 
     if e >= train_start:
 
-        print("{} Total reward in episode {} = {}, loss : {}, epsilon : {}, time_step : {}, episode_duration : {}".format(env.map_name,
+        print("{} Total reward in episode {} = {}, epsilon : {}, time_step : {}, episode_duration : {}".format(env.map_name,
                                                                                                 e,
-                                                                                                np.round(episode_reward, 2),
-                                                                                                np.round(loss, 2),
-                                                                                                np.round(epsilon, 2),
-                                                                                                t, np.round(time.time()-start, 2)))
+                                                                                                np.round(episode_reward, 3),
+                                                                                                np.round(epsilon, 3),
+                                                                                                t, np.round(time.time()-start, 3)))
 
 
     return episode_reward, epsilon, t, eval
 
 def main():
-    #writer = SummaryWriter('logs/')
-    if vessl_on == True:
-        env1 = REGISTRY["sc2"](map_name=map_name1, seed=123, step_mul=8, replay_dir="Replays", )
-    else:
-        env1 = StarCraft2Env(map_name=map_name1, step_mul=8, replay_dir="Replays", seed=123)
+
+    env1 = REGISTRY["sc2"](map_name=map_name1, seed=123, step_mul=8, replay_dir="Replays", )
+    # else:
+    #     env1 = StarCraft2Env(map_name=map_name1, step_mul=8, replay_dir="Replays", seed=123)
     env1.reset()
     num_unit_types, unit_type_ids = get_agent_type_of_envs([env1])
     env1.generate_num_unit_types(num_unit_types, unit_type_ids)
 
 
 
-    hidden_size_obs = 32       # GAT 해당(action 및 node representation의 hidden_size)
-    hidden_size_comm = 60
-    hidden_size_Q = 84         # GAT 해당
-    hidden_size_meta_path = 42 # GAT 해당
-    n_representation_obs = 36  # GAT 해당
-    n_representation_comm = 69
-    buffer_size = 150000
-    batch_size = 32
-    gamma = 0.99
-    learning_rate = 1.3e-4
-    n_multi_head = 1
-    dropout = 0.6
-    num_episode = 1000000
-
-    train_start = 10
-    epsilon = 1
-    min_epsilon = 0.05
-    anneal_steps = 50000
-
+    hidden_size_obs = cfg.hidden_size_obs       # GAT 해당(action 및 node representation의 hidden_size)
+    hidden_size_comm = cfg.hidden_size_comm
+    hidden_size_Q = cfg.hidden_size_Q         # GAT 해당
+    hidden_size_meta_path = cfg.hidden_size_meta_path # GAT 해당
+    n_representation_obs = cfg.n_representation_obs  # GAT 해당
+    n_representation_comm = cfg.n_representation_comm
+    buffer_size = cfg.buffer_size
+    batch_size = cfg.batch_size
+    gamma = cfg.gamma
+    learning_rate = cfg.lr
+    n_multi_head = cfg.n_multi_head
+    dropout = cfg.dropout
+    num_episode = cfg.num_episod
+    train_start = cfg.train_start
+    epsilon = cfg.epsilon
+    min_epsilon = cfg.min_epsilon
+    anneal_steps = cfg.anneal_steps
     anneal_epsilon = (epsilon - min_epsilon) / anneal_steps
 
     initializer = True
+    writer = SummaryWriter('/output/logs/',
+                           comment="map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(
+                               map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs,
+                               n_representation_comm))
     agent1 = Agent(num_agent=env1.get_env_info()["n_agents"],
                    num_enemy=env1.get_env_info()["n_enemies"],
                    feature_size=env1.get_env_info()["node_features"],
@@ -232,28 +233,7 @@ def main():
                    gamma=gamma,
                    GNN=GNN)
 
-    # agent2 = Agent(num_agent=env2.get_env_info()["n_agents"],
-    #               feature_size=env2.get_env_info()["node_features"],
-    #               hidden_size_obs=hidden_size_obs,
-    #               hidden_size_comm=hidden_size_comm,
-    #               hidden_size_Q=hidden_size_Q,
-    #               n_multi_head=n_multi_head,
-    #               n_representation_obs=n_representation_obs,
-    #               n_representation_comm=n_representation_comm,
-    #               dropout=dropout,
-    #               action_size=env2.get_env_info()["n_actions"],
-    #               buffer_size=buffer_size,
-    #               batch_size=batch_size,
-    #               max_episode_len=env2.episode_limit,
-    #               learning_rate=learning_rate,
-    #               gamma=gamma)
 
-
-
-
-
-
-    #network_sharing([agent1])
     t = 0
     epi_r = []
     win_rates = []
@@ -261,23 +241,31 @@ def main():
         episode_reward, epsilon, t, eval = train(agent1, env1, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, initializer)
         initializer = False
         epi_r.append(episode_reward)
+        writer.add_scalar("episode_reward/train", episode_reward, e)
+        if t % 500000 == 0:
+            if vessl_on == True:
+                agent1.save_model("\output\map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.pt".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
+            else:
+                agent1.save_model("\output\map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.pt".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
         if e % 100 == 1:
             if vessl_on == True:
-                pass
-                #vessl.log(step = e, payload = {'reward' : np.mean(epi_r)})
+                vessl.log(step = e, payload = {'reward' : np.mean(epi_r)})
                 epi_r = []
+                r_df= pd.DataFrame(epi_r)
+                r_df.to_csv("\output\cumulative_reward_map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
             else:
                 r_df= pd.DataFrame(epi_r)
-                r_df.to_csv("reward.csv")
+                r_df.to_csv("\output\cumulative_reward_map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
 
         if eval == True:
             win_rate = evaluation(env1, agent1, 32)
             if vessl_on == True:
-                pass
-                #vessl.log(step = t, payload = {'win_rate' : win_rate})
+                vessl.log(step = t, payload = {'win_rate' : win_rate})
+                wr_df = pd.DataFrame(win_rates)
+                wr_df.to_csv("\output\win_rate_map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
             else:
                 wr_df = pd.DataFrame(win_rates)
-                wr_df.to_csv("win_rate.csv")
+                wr_df.to_csv("\output\win_rate_map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}.csv".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm))
 
 
 

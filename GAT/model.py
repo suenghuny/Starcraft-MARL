@@ -17,8 +17,7 @@ class GAT(nn.Module):
                                 for _ in range(nheads)]
             for i, attention in enumerate(self.attentions1):
                 self.add_module('attention_{}'.format(i), attention)
-            self.attentions2 = [
-                GraphAttentionLayer(nhid * nheads, nhid, dropout=dropout, alpha=alpha, concat=True).to(device) for _ in
+            self.attentions2 = [GraphAttentionLayer(nhid * nheads, nhid, dropout=dropout, alpha=alpha, concat=True).to(device) for _ in
                 range(nheads)]
 
             for i, attention in enumerate(self.attentions2):
@@ -36,7 +35,11 @@ class GAT(nn.Module):
             self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False).to(
                 device)
 
-
+    #
+    # def save(self):
+    #     if self.mode == 'communication':
+    #         s
+    #     if self.mode == 'observation':
 
     def forward(self, x, edge_index, n_node_features, mini_batch):
 

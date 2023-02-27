@@ -231,11 +231,10 @@ class Agent:
 
 
         self.VDN_target.load_state_dict(self.VDN.state_dict())
-
-
-
-        self.buffer = Replay_Buffer(buffer_size, batch_size, num_agent, action_size)
+        self.buffer_size = buffer_size
         self.batch_size = batch_size
+        self.buffer = Replay_Buffer(self.buffer_size, self.batch_size, self.num_agent, self.action_size)
+
 
 
         self.action_space = [i for i in range(self.action_size)]
@@ -302,6 +301,17 @@ class Agent:
 
 
 
+    def save_model(self, path):
+        import copy
+        temp_agent = copy.deepcopy(self)
+        del temp_agent.buffer
+        temp_agent.buffer = Replay_Buffer(self.buffer_size, self.batch_size, self.num_agent, self.action_size)
+        torch.save(temp_agent, path)
+        del temp_agent
+
+
+    def load_model(self, path):
+        self = torch.load(path)
 
 
     def get_node_representation(self, node_feature, edge_index_enemy, edge_index_ally, n_node_features, mini_batch = False):
@@ -459,10 +469,6 @@ class Agent:
         return action
 
 
-
-
-
-
     def learn(self, regularizer):
         node_features, actions, action_features, edge_indices_enemy, edge_indices_ally, rewards, dones, node_features_next, action_features_next, edge_indices_enemy_next, edge_indices_ally_next, avail_actions_next = self.buffer.sample()
 
@@ -498,7 +504,7 @@ class Agent:
                              target=True) for agent_id in range(self.num_agent)]
 
         q_tot = torch.stack(q, dim=1)
-        loss2 = torch.var(q_tot, dim = 1).mean()
+
         q_tot_tar = torch.stack(q_tar, dim=1)
         q_tot = self.VDN(q_tot)
         q_tot_tar = self.VDN_target(q_tot_tar)

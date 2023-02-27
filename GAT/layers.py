@@ -22,12 +22,8 @@ class GraphAttentionLayer(nn.Module):
         nn.init.xavier_uniform_(self.W.data, gain=1.414)
         self.a = nn.Parameter(torch.empty(size=(2 * out_features, 1)))
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
-
-
-
         self.c = nn.Parameter(torch.empty(size=(out_features, 1)))
         nn.init.xavier_uniform_(self.c.data, gain=1.414)
-
         self.leakyrelu = nn.LeakyReLU(self.alpha)
 
     def edge_index_into_adjacency_matrix(self, n_node_feature, edge_index):
