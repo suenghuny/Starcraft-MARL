@@ -209,8 +209,12 @@ def main():
     min_epsilon = cfg.min_epsilon
     anneal_steps = cfg.anneal_steps
     anneal_epsilon = (epsilon - min_epsilon) / anneal_steps
+    if vessl_on == True:
+        output_dir = "../output/map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}/".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm)
+    else:
+        output_dir = "output/map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}/".format(
+            map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm)
 
-    output_dir = "./output/map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -253,7 +257,7 @@ def main():
         #writer.add_scalar("episode_reward/train", episode_reward, e)
         if t % 500000 == 1000:
             if vessl_on == True:
-                agent1.save_model(output_dir+"/{}.pt".format(t))
+                agent1.save_model(output_dir+"{}.pt".format(t))
             else:
                 agent1.save_model(output_dir+"{}.pt".format(t))
         if e % 100 == 1:
