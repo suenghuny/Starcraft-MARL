@@ -17,7 +17,7 @@ import time
 regularizer = 0.0
 map_name1 = '6h_vs_8z'
 
-GNN = 'GAT'
+GNN = 'FastGTN'
 heterogenous = False
 
 """
@@ -188,11 +188,12 @@ def main():
     n_multi_head = 1
     dropout = 0.6
     num_episode = 1000000
-
     train_start = 10
     epsilon = 1
     min_epsilon = 0.05
     anneal_steps = 50000
+    teleport_probability = 0.9
+    gtn_beta = 0.1
 
     anneal_epsilon = (epsilon - min_epsilon) / anneal_steps
 
@@ -214,7 +215,9 @@ def main():
                    max_episode_len=env1.episode_limit,
                    learning_rate=learning_rate,
                    gamma=gamma,
-                   GNN=GNN)
+                   GNN=GNN,
+                   teleport_probability= teleport_probability,
+                   gtn_beta = gtn_beta)
 
     # agent2 = Agent(num_agent=env2.get_env_info()["n_agents"],
     #               feature_size=env2.get_env_info()["node_features"],
@@ -246,19 +249,15 @@ def main():
         initializer = False
         epi_r.append(episode_reward)
         if e % 100 == 1:
-            if vessl_on == True:
-                epi_r = []
-            else:
-                r_df= pd.DataFrame(epi_r)
-                r_df.to_csv("reward.csv")
+
+            r_df= pd.DataFrame(epi_r)
+            r_df.to_csv("reward.csv")
 
         if eval == True:
             win_rate = evaluation(env1, agent1, 32)
-            if vessl_on == True:
-                pass#vessl.log(step = t, payload = {'win_rate' : win_rate})
-            else:
-                wr_df = pd.DataFrame(win_rates)
-                wr_df.to_csv("win_rate.csv")
+
+            wr_df = pd.DataFrame(win_rates)
+            wr_df.to_csv("win_rate.csv")
 
 
 

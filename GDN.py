@@ -202,7 +202,9 @@ class Agent:
                  batch_size,
                  learning_rate,
                  gamma,
-                 GNN):
+                 GNN,
+                 teleport_probability,
+                 gtn_beta):
         torch.manual_seed(81)
         random.seed(81)
         np.random.seed(81)
@@ -213,6 +215,7 @@ class Agent:
         self.hidden_size_obs = hidden_size_obs
         self.hidden_size_comm = hidden_size_comm
         self.n_multi_head = n_multi_head
+        self.teleport_probability = teleport_probability
 
         self.n_representation_obs = n_representation_obs
         self.n_representation_comm = n_representation_comm
@@ -260,14 +263,16 @@ class Agent:
                                       nclass = n_representation_obs,
                                       dropout = dropout,
                                       alpha = 0.2,
-                                      mode = 'observation').to(device)
+                                      mode = 'observation',
+                                      teleport_probability = self.teleport_probability).to(device)
             self.func_ally_comm = GAT(nfeat = 2 * n_representation_obs,
                                       nhid = hidden_size_comm,
                                       nheads = n_multi_head,
                                       nclass = n_representation_comm,
                                       dropout = dropout,
                                       alpha = 0.2,
-                                      mode = 'communication').to(device)   # 수정사항
+                                      mode = 'communication',
+                                      teleport_probability = self.teleport_probability).to(device)   # 수정사항
             self.eval_params = list(self.VDN.parameters()) + \
                                list(self.Q.parameters()) + \
                                list(self.node_representation_enemy_obs.parameters()) + \
@@ -276,7 +281,10 @@ class Agent:
                                list(self.func_ally_comm.parameters()) + \
                                list(self.action_representation.parameters())
         if self.GNN == 'FastGTN':
-            self.Q = Network(hidden_size_meta_path + n_representation_obs, hidden_size_Q).to(device)
+            self.Q = Network(
+                hidden_size_meta_path +
+                n_representation_obs,
+                hidden_size_Q).to(device)
             self.Q_tar = Network(hidden_size_meta_path + n_representation_obs, hidden_size_Q).to(device)
             self.action_representation = NodeEmbedding(feature_size=feature_size + 6 - 1, hidden_size=hidden_size_obs,
                                                        n_representation_obs=n_representation_obs).to(device)  # 수정사항
@@ -288,7 +296,9 @@ class Agent:
                              num_FastGTN_layers = 2,
                              hidden_size = hidden_size_meta_path,
                              num_channels = 2,
-                             num_layers = 2
+                             num_layers = 2,
+                             teleport_probability=self.teleport_probability,
+                             gtn_beta = gtn_beta
                              ).to(device)
             self.node_representation = NodeEmbedding(feature_size=feature_size - 1, hidden_size=hidden_size_obs,
                                                      n_representation_obs=n_representation_obs).to(device)  # 수정사항

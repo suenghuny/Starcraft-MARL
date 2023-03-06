@@ -20,15 +20,17 @@ device = f'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class FastGTNs(nn.Module):
-    def __init__(self, num_edge_type, feature_size, num_nodes, num_FastGTN_layers, hidden_size, num_channels, num_layers):
+    def __init__(self, num_edge_type, feature_size, num_nodes, num_FastGTN_layers, hidden_size, num_channels, num_layers, gtn_beta, teleport_probability):
         # w_in은 node_feature의 갯수
         super(FastGTNs, self).__init__()
         self.num_nodes = num_nodes
         self.num_FastGTN_layers = num_FastGTN_layers
+        self.gtn_beta = gtn_beta
+        self.teleport_probability = teleport_probability
         fastGTNs = []
         for i in range(self.num_FastGTN_layers):
             if i == 0:
-                fastGTNs.append(FastGTN(num_edge_type = num_edge_type, w_in = feature_size, w_out = hidden_size, num_nodes = num_nodes, num_channels = num_channels, num_layers = num_layers))
+                fastGTNs.append(FastGTN(num_edge_type = num_edge_type, w_in = feature_size, w_out = hidden_size, num_nodes = num_nodes, num_channels = num_channels, num_layers = num_layers, gtn_beta = gtn_beta, teleport_probability= self.teleport_probability))
             else:
                 fastGTNs.append(
                     FastGTN(num_edge_type=num_edge_type,
@@ -36,7 +38,9 @@ class FastGTNs(nn.Module):
                             w_out=hidden_size,
                             num_nodes=num_nodes,
                             num_channels=num_channels,
-                            num_layers=num_layers))
+                            num_layers=num_layers,
+                            gtn_beta = gtn_beta,
+                            teleport_probability= self.teleport_probability))
         self.fastGTNs = nn.ModuleList(fastGTNs)
         self.loss = nn.CrossEntropyLoss()
 
@@ -73,7 +77,7 @@ class FastGTNs(nn.Module):
 
 
 class FastGTN(nn.Module):
-    def __init__(self, num_edge_type, w_in, w_out, num_nodes, num_channels, num_layers):
+    def __init__(self, num_edge_type, w_in, w_out, num_nodes, num_channels, num_layers, gtn_beta, teleport_probability):
         super(FastGTN, self).__init__()
 
         self.num_edge_type = num_edge_type
@@ -83,6 +87,8 @@ class FastGTN(nn.Module):
         self.w_in = w_in
         self.w_out = w_out
         self.num_layers = num_layers
+        self.gtn_beta = gtn_beta
+        self.teleport_probability = teleport_probability
 
         layers = []
         for i in range(self.num_layers):
@@ -110,7 +116,7 @@ class FastGTN(nn.Module):
             H = [X @ W for W in self.Ws]  # GCNConv와 input의 matrix multiplication
             H = torch.stack(H, dim=0)
             X_ = H.clone().detach().requires_grad_(False)
-
+            #print("전", X_.shape)
             for i in range(self.num_layers):
                 # H가 모든 channel에 대한 X@W를 답고 있음
                 # self.layers[i]는 GTLayer를 담고 있음
@@ -120,11 +126,15 @@ class FastGTN(nn.Module):
             """
             이제 여기서부터 node feature를 이용한 graph convolution 연산이 수행된다.
             """
-            beta = 0.1
-            H_ = F.relu(beta * X_ + (1 - beta) * H)
+
+            H_ = self.teleport_probability * F.relu(self.gtn_beta * X_ + (1 - self.gtn_beta) * H)+(1-self.teleport_probability)* X_
+
             H_ = torch.einsum("ijk ->jik", H_)
+
             H_ = H_.reshape(num_nodes, -1)
+
             H_ = F.relu(self.linear1(H_))
+
 
         else:
             H = [torch.einsum('bij, jk->bik', X, W) for W in self.Ws]  # GCNConv와 input의 matrix multiplication
@@ -145,10 +155,9 @@ class FastGTN(nn.Module):
             """
             이제 여기서부터 node feature를 이용한 graph convolution 연산이 수행된다.
             """
-            beta = 0.1
             shape0, shape1, shape2, shape3 = H.shape
             # batch_size, num_channels, num_nodes, feature_size
-            H_ = F.relu(beta * (X_) + (1 - beta) * H)
+            H_ = self.teleport_probability * F.relu(self.gtn_beta * (X_) + (1 - self.gtn_beta) * H)+(1-self.teleport_probability)*X_
             H_ = torch.einsum("bijk -> bjik", H_)
             H_ = H_.reshape(shape0, shape2, -1)
             H_ = F.relu(self.linear1(H_))

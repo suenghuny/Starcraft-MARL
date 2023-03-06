@@ -15,6 +15,8 @@ def get_cfg():
     parser.add_argument("--n_representation_comm", type=int, default=69, help="")
     parser.add_argument("--buffer_size", type=int, default=150000, help="")
     parser.add_argument("--batch_size", type=int, default=32, help="")
+    parser.add_argument("--teleport_probability", type=float, default=0.9, help="teleport_probability")
+    parser.add_argument("--gtn_beta", type=float, default=0.1, help="teleport_probability")
     parser.add_argument("--gamma", type=float, default=0.99, help="discount ratio")
     parser.add_argument("--lr", type=float, default=1.3e-4, help="learning rate")
     parser.add_argument("--n_multi_head", type=int, default=1, help="number of multi head")

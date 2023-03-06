@@ -10,13 +10,14 @@ class GraphAttentionLayer(nn.Module):
     """
     Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
     """
-    def __init__(self, in_features, out_features, dropout, alpha, concat=True):
+    def __init__(self, in_features, out_features, dropout, alpha, teleport_probability, concat=True):
         super(GraphAttentionLayer, self).__init__()
         self.dropout = dropout
         self.in_features = in_features
         self.out_features = out_features
         self.alpha = alpha
         self.concat = concat
+        self.teleport_probability = teleport_probability
 
         self.W = nn.Parameter(torch.empty(size=(in_features, out_features)))
         nn.init.xavier_uniform_(self.W.data, gain=1.414)
@@ -42,6 +43,7 @@ class GraphAttentionLayer(nn.Module):
 
             adj = adj.to(device).long()
             Wh = torch.mm(h, self.W)                                                    # adj.shape : (n_node, n_node)
+
                                                                                         # h.shape : (n_node, feature_size), self.W.shape : (feature_size, hidden_size)
                                                                                         # Wh.shape : (n_node, hidden_size)
             e = self._prepare_attentional_mechanism_input(Wh, mini_batch = mini_batch)  # e : attention 계수(h_i 계산시 v_i와 연결된 v_j에 대해 얼마나 가중치를 둘 것 인가에 대한 계수)
@@ -51,7 +53,9 @@ class GraphAttentionLayer(nn.Module):
                                                                                         # e.shape : (n_node, n_node)
             attention = F.softmax(attention, dim=1)                                     # attention : (n_node, n_node)
             #attention = F.dropout(attention, self.dropout, training=self.training)
-            h_prime = torch.mm(attention, Wh)                                           # Wh.shape : (n_node, hidden_size)
+                                                        # Wh.shape : (n_node, hidden_size)
+            h_prime =self.teleport_probability * torch.mm(attention, Wh) + (1-self.teleport_probability) * Wh
+
         else:
 
             batch_size = len(edge_index)
@@ -71,7 +75,7 @@ class GraphAttentionLayer(nn.Module):
 
             attention = F.softmax(attention, dim=2)
             #attention = F.dropout(attention, self.dropout, training=self.training)
-            h_prime = torch.bmm(attention, Wh)
+            h_prime = self.teleport_probability * torch.bmm(attention, Wh) + (1-self.teleport_probability) * Wh
 
 
 
