@@ -265,6 +265,7 @@ def main():
 
         if eval == True:
             win_rate = evaluation(env1, agent1, 32)
+            win_rates.append(win_rate)
             if vessl_on == True:
                 vessl.log(step = t, payload = {'win_rate' : win_rate})
                 wr_df = pd.DataFrame(win_rates)
