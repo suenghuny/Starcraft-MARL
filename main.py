@@ -250,8 +250,10 @@ def main():
         #writer.add_scalar("episode_reward/train", episode_reward, e)
         if t % 5 <= 0.1:
             if vessl_on == True:
+                print("Model save")
                 agent1.save_model(output_dir+"{}.pt".format(t))
             else:
+                print("Model save")
                 agent1.save_model(output_dir+"{}.pt".format(t))
         if e % 100 == 1:
             if vessl_on == True:
