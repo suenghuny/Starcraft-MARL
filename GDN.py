@@ -312,12 +312,9 @@ class Agent:
 
 
     def save_model(self, path):
-        import copy
-        temp_agent = copy.deepcopy(self)
-        del temp_agent.buffer
-        temp_agent.buffer = Replay_Buffer(self.buffer_size, self.batch_size, self.num_agent, self.action_size)
-        torch.save(temp_agent, path)
-        del temp_agent
+
+        torch.save(self, path)
+
 
 
     def load_model(self, path):
