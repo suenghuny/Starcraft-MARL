@@ -29,6 +29,8 @@ if sys.platform == "linux":
                           os.path.join(os.getcwd(),
                                        "3rdparty",
                                        "StarCraftII"))
+else:
+    pass
 
 regularizer = 0.0
 map_name1 = cfg.map_name
@@ -168,17 +170,13 @@ def train(agent, env, e, t, train_start, epsilon, min_epsilon, anneal_epsilon, i
     return episode_reward, epsilon, t, eval
 
 def main():
-
-    env1 = REGISTRY["sc2"](map_name=map_name1, seed=123, step_mul=8, replay_dir="Replays", )
-    # else:
-    #     env1 = StarCraft2Env(map_name=map_name1, step_mul=8, replay_dir="Replays", seed=123)
+    if sys.platform == "linux":
+        env1 = REGISTRY["sc2"](map_name=map_name1, seed=123, step_mul=8, replay_dir="Replays", )
+    else:
+        env1 = StarCraft2Env(map_name=map_name1, step_mul=8, replay_dir="Replays", seed=123)
     env1.reset()
     num_unit_types, unit_type_ids = get_agent_type_of_envs([env1])
     env1.generate_num_unit_types(num_unit_types, unit_type_ids)
-
-
-
-
     hidden_size_obs = cfg.hidden_size_obs       # GAT 해당(action 및 node representation의 hidden_size)
     hidden_size_comm = cfg.hidden_size_comm
     hidden_size_Q = cfg.hidden_size_Q         # GAT 해당

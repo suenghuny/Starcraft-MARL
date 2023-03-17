@@ -39,7 +39,8 @@ class GraphAttentionLayer(nn.Module):
     def forward(self, h, edge_index, n_node_features, mini_batch = False):
 
         if mini_batch == False:
-            adj = self.edge_index_into_adjacency_matrix(n_node_features, edge_index)
+            adj =torch.sparse_coo_tensor(edge_index, torch.ones(torch.tensor(edge_index).shape[1]).to(device), (n_node_features, n_node_features)).to_dense().to(device)
+            #self.edge_index_into_adjacency_matrix(n_node_features, edge_index)
 
             adj = adj.to(device).long()
             Wh = torch.mm(h, self.W)                                                    # adj.shape : (n_node, n_node)
@@ -59,9 +60,9 @@ class GraphAttentionLayer(nn.Module):
         else:
 
             batch_size = len(edge_index)
-            adj = [
-                self.edge_index_into_adjacency_matrix(n_node_features, edge_index[m]) for m in range(batch_size)]
-
+            # adj = [
+            #     self.edge_index_into_adjacency_matrix(n_node_features, edge_index[m]) for m in range(batch_size)]
+            adj = [torch.sparse_coo_tensor(edge_index[m], torch.ones(torch.tensor(edge_index[m]).shape[1]).to(device), (n_node_features, n_node_features)).to_dense().to(device) for m in range(batch_size)]
             adj = torch.stack(adj)                                                      #
             adj = adj.to(device).long()
 

@@ -514,7 +514,8 @@ class Agent:
                              target=True) for agent_id in range(self.num_agent)]
 
         q_tot = torch.stack(q, dim=1)
-
+        #print(torch.corrcoef(q_tot.T).shape)
+        #print(q_tot.shape)
         q_tot_tar = torch.stack(q_tar, dim=1)
         q_tot = self.VDN(q_tot)
         q_tot_tar = self.VDN_target(q_tot_tar)
