@@ -28,6 +28,7 @@ def get_cfg():
     parser.add_argument("--anneal_steps", type=int, default=50000, help="anneal ratio of epsilon greedy")
     parser.add_argument("--model_load", type=bool, default=False, help="model load")
     parser.add_argument("--load_path", type=str, default="/3000000.pt", help="loadpath")
+    print("cfg")
 
 
 
