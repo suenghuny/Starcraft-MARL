@@ -312,13 +312,12 @@ class Agent:
 
 
     def save_model(self, path):
-
         torch.save(self, path)
 
 
 
     def load_model(self, path):
-        self = torch.load(path)
+        torch.load(path)
 
 
     def get_node_representation(self, node_feature, edge_index_enemy, edge_index_ally, n_node_features, mini_batch = False):

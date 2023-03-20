@@ -194,11 +194,12 @@ def main():
     epsilon = cfg.epsilon
     min_epsilon = cfg.min_epsilon
     anneal_steps = cfg.anneal_steps
+    model_load = cfg.model_load
     teleport_probability = cfg.teleport_probability
     gtn_beta = cfg.gtn_beta
     anneal_epsilon = (epsilon - min_epsilon) / anneal_steps
-    if vessl_on == True:
 
+    if vessl_on == True:
         output_dir = "/output/map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}/".format(map_name1, GNN, learning_rate, hidden_size_obs, hidden_size_Q, n_representation_obs, n_representation_comm)
     else:
         output_dir = "output/map_name_{}_GNN_{}_lr_{}_hiddensizeobs_{}_hiddensizeq_{}_nrepresentationobs_{}_nrepresentationcomm_{}/".format(
@@ -237,6 +238,9 @@ def main():
                    teleport_probability = teleport_probability,
                    gtn_beta = gtn_beta)
 
+    if model_load == True:
+        load_path = cfg.load_path
+        agent1.load(output_dir+load_path)
 
     t = 0
     epi_r = []
