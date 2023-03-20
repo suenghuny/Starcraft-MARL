@@ -240,7 +240,7 @@ def main():
 
     if model_load == True:
         load_path = cfg.load_path
-        agent1.load(output_dir+load_path)
+        agent1.load_model(output_dir+load_path)
 
     t = 0
     epi_r = []
